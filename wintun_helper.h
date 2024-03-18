@@ -18,7 +18,5 @@ extern WINTUN_SEND_PACKET_FUNC* WintunSendPacket;
 HMODULE wt_LoadModule();
 HMODULE InitializeWintun(HMODULE _Wintun);
 
-// This function use new, free the memory afterwards
-// It converts to a const char* to wchar_t* for use in the Wintun adapter name
-const wchar_t* GetWC(const char* c);
+std::wstring GetWC(const char* c);
 bool validateIpAddress(const char* ipAddress);

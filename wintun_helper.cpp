@@ -41,15 +41,13 @@ HMODULE InitializeWintun(HMODULE _Wintun)
 	return Wintun;
 }
 
-// This function use new, free the memory afterwards
-// It converts to a const char* to wchar_t* for use in the Wintun adapter name
-const wchar_t* GetWC(const char* c)
+std::wstring GetWC(const char* c)
 {
 	const size_t cSize = strlen(c) + 1;
-	wchar_t* wc = new wchar_t[cSize];
+	std::wstring wc(cSize, 0);
 
 	size_t outS;
-	mbstowcs_s(&outS, wc, cSize, c, cSize - 1);
+	mbstowcs_s(&outS, &wc[0], cSize, c, cSize - 1);
 
 	return wc;
 }

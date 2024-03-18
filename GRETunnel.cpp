@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
 	const char* bind_ip = argv[3];
 	const char* gateway_ip = argv[4];
-	const wchar_t* adapter_name = L"GRE_Tunnel";
+	std::wstring adapter_name = L"GRE_Tunnel";
 	const char* _adapter_name = "GRE_Tunnel";
 	int cidr = 30;
 	const char* additional_ip = "";
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	Adapter = WintunCreateAdapter(adapter_name, L"GRE_Tunnel", NULL);
+	Adapter = WintunCreateAdapter(adapter_name.c_str(), L"GRE_Tunnel", NULL);
 	if (Adapter == nullptr)
 	{
 		LOG(FATAL) << "Failed to create Wintun adapter: " << GetLastError();
