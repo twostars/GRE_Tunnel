@@ -1,7 +1,8 @@
 #pragma once
+
 extern bool reset_adapter;
 extern WINTUN_SESSION_HANDLE Session;
-extern GRE* gre;
+extern std::unique_ptr<GRE> gre;
 
 // This function handles the packet sent by the client through the virtual network card
 [[noreturn]] void wintun_receive_loop() {

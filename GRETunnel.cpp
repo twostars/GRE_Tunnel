@@ -19,7 +19,7 @@
 #pragma comment(lib, "Iphlpapi.lib")
 
 bool reset_adapter = false;
-GRE* gre;
+std::unique_ptr<GRE> gre;
 WINTUN_ADAPTER_HANDLE Adapter;
 WINTUN_SESSION_HANDLE Session;
 
@@ -196,9 +196,8 @@ int main(int argc, char* argv[])
 		system(comm);
 	}
 
-	gre = new GRE(server_ip, gre_bind_ip, mtu);
+	gre = std::make_unique<GRE>(server_ip, gre_bind_ip, mtu);
 
 	std::thread t1(wintun_receive_loop);
-
 	gre->receiver(MWintun);
 }
