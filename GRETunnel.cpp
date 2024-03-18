@@ -117,9 +117,10 @@ int main(int argc, char* argv[])
 		<< "GRE server IP           : " << server_ip << std::endl
 		<< "GRE server IP (Gateway) : " << gateway_ip << std::endl
 		<< "GRE binding IP          : " << gre_bind_ip << std::endl
-		<< "Additional IP: " << additional_ip << std::endl
-		<< "MTU: " << mtu << std::endl;
-	std::wcout << L"Adapter name            : " << adapter_name << std::endl << std::endl;
+		<< "Additional IP           : " << additional_ip << std::endl
+		<< "MTU                     : " << mtu << std::endl;
+	std::wcout
+		<< L"Adapter name            : " << adapter_name << std::endl << std::endl;
 
 	if (!validateIpAddress(bind_ip) || !validateIpAddress(gre_bind_ip) || !validateIpAddress(server_ip)
 		|| !validateIpAddress(gateway_ip)) {
