@@ -1,13 +1,65 @@
+#include "pch.h"
 #include "GRE.h"
+#include "wintun_helper.h"
 
-#define RecvBufSize 32768
+constexpr uint16_t IPPROTO_GRE	= 47;
+constexpr size_t GRE_SIZE		= 4;
+constexpr size_t SEND_BUFFER	= 32768;
+constexpr size_t RECV_BUFFER	= 32768;
+
+extern bool reset_adapter;
+extern WINTUN_SESSION_HANDLE Session;
+extern WINTUN_ADAPTER_HANDLE Adapter;
+
+GRE::GRE(const char* _server_ip, const char* _bind_ip, uint32_t mtu)
+{
+	// Pre-allocate sending buffer to avoid runtime allocation
+	sendBuf = (char*)malloc(SEND_BUFFER);
+	if (sendBuf == NULL) {
+		LOG(FATAL) << "sendBuf: Could not allocate " << SEND_BUFFER << " bytes";
+		return;
+	}
+	memcpy(sendBuf, "\0\0\x08\0", GRE_SIZE); // GRE size
+
+	// GRE Server IP address
+	RecvAddr.sin_family = AF_INET;
+	RecvAddr.sin_port = htons(IPPROTO_GRE);
+	inet_pton(AF_INET, _server_ip, &RecvAddr.sin_addr.s_addr);
+
+	//-----------------
+	WSADATA wsaData;
+	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != NO_ERROR) {
+		LOG(FATAL) << "WSAStartup failed: " << iResult;
+		throw;
+	}
+
+	s = socket(AF_INET, SOCK_RAW, IPPROTO_GRE);
+	if (s == INVALID_SOCKET) {
+		LOG(FATAL) << "Socket creation failed: " << WSAGetLastError();
+		throw;
+	}
+
+	struct sockaddr_in local{};
+	local.sin_family = AF_INET;
+	local.sin_port = htons(IPPROTO_GRE);
+	inet_pton(AF_INET, _bind_ip, &local.sin_addr.s_addr);
+
+	if (local.sin_addr.s_addr == INADDR_NONE || bind(s, (struct sockaddr*)&local, sizeof(local)) != 0)
+	{
+		LOG(FATAL) << "Binding failed: " << WSAGetLastError();
+		throw;
+	}
+
+	WSASetIPUserMtu(s, mtu);
+}
 
 [[noreturn]] void GRE::receiver(HMODULE wintun) {
 	sockaddr_in SenderAddr{};
 	int is_flooding = 0;
 	int SenderAddrSize = sizeof(sockaddr_in);
 	int rBufLen;
-	static char RecvBuf[RecvBufSize];
+	static char RecvBuf[RECV_BUFFER];
 
 	if (!wintun || !InitializeWintun(wintun) || !Session) {
 		LOG(ERROR) << "Could not load wintun.dll";
@@ -16,7 +68,7 @@
 	el::Logger* defaultLogger = el::Loggers::getLogger("default");
 
 	while (true) {
-		rBufLen = recvfrom(s, RecvBuf, RecvBufSize, 0, (SOCKADDR*)&SenderAddr, &SenderAddrSize);
+		rBufLen = recvfrom(s, RecvBuf, RECV_BUFFER, 0, (SOCKADDR*)&SenderAddr, &SenderAddrSize);
 		if (rBufLen == SOCKET_ERROR)
 		{
 			LOG_N_TIMES(3, WARNING) << "Socket error: " << WSAGetLastError();

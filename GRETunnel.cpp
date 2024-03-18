@@ -1,18 +1,6 @@
-#include <iostream>
-#include <winsock2.h>
-#include <wintun.h>
-#include <ws2ipdef.h>
-#include <iphlpapi.h>
-#include <mstcpip.h>
-#include <WS2tcpip.h>
-#include <thread>
-#include <filesystem>
-#include <Dbghelp.h>
-#include "include/wintun.h"
-
+#include "pch.h"
 #include "wintun_helper.h"
 #include "GRE.h"
-#include "easylogging++.h"
 #include "wintun.h"
 
 #pragma comment(lib, "Ws2_32.lib")
@@ -32,7 +20,6 @@ void configure_logging() {
 	conf.setGlobally(el::ConfigurationType::Format, "%datetime{%d/%M/%Y %H:%m:%s} [%level] %msg");
 
 	el::Loggers::reconfigureLogger("default", conf);
-
 }
 
 void make_minidump(EXCEPTION_POINTERS* e)
