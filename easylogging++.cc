@@ -2699,7 +2699,7 @@ namespace el {
                 }
                 m_proceed = false;
             }
-            catch (std::exception& ex) {
+            catch (std::exception&) {
                 // Extremely low memory situation; don't let exception be unhandled.
             }
         }
