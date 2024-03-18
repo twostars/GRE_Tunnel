@@ -89,7 +89,6 @@ int main(int argc, char* argv[])
 	const char* bind_ip = argv[3];
 	const char* gateway_ip = argv[4];
 	std::wstring adapter_name = L"GRE_Tunnel";
-	const char* _adapter_name = "GRE_Tunnel";
 	int cidr = 30;
 	const char* additional_ip = "";
 	uint32_t mtu = 1476;
@@ -101,10 +100,7 @@ int main(int argc, char* argv[])
 	}
 
 	if (argc >= 7)
-	{
 		adapter_name = GetWC(argv[6]);
-		_adapter_name = argv[6];
-	}
 
 	if (argc >= 8)
 		additional_ip = argv[7];
@@ -168,18 +164,18 @@ int main(int argc, char* argv[])
 	}
 
 	char comm[256];
-	sprintf_s(comm, 256, "netsh interface ip set address name=\"%s\" static %s 255.255.255.252 %s 300", _adapter_name, bind_ip, gateway_ip);
+	sprintf_s(comm, 256, "netsh interface ip set address name=\"%ls\" static %s 255.255.255.252 %s 300", adapter_name.c_str(), bind_ip, gateway_ip);
 	LOG(INFO) << comm;
 	system(comm);
 	memset(comm, 0, 256);
-	sprintf_s(comm, 256, "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent", _adapter_name, mtu);
+	sprintf_s(comm, 256, "netsh interface ip set subinterface \"%ls\" mtu=%u store=persistent", adapter_name.c_str(), mtu);
 	LOG(INFO) << comm;
 	system(comm);
 
 	if (argc >= 8)
 	{
 		memset(comm, 0, 256);
-		sprintf_s(comm, 256, "netsh interface ipv4 add address \"%s\" %s 255.255.255.255", _adapter_name, additional_ip);
+		sprintf_s(comm, 256, "netsh interface ipv4 add address \"%ls\" %s 255.255.255.255", adapter_name.c_str(), additional_ip);
 		LOG(INFO) << comm;
 		system(comm);
 	}
