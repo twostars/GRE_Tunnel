@@ -20,7 +20,7 @@ class GRE
 	sockaddr_in RecvAddr{};
 	char* sendBuf;
 public:
-	GRE(const char* _server_ip, const char* _bind_ip) {
+	GRE(const char* _server_ip, const char* _bind_ip, uint32_t mtu) {
 		// Pre-allocate sending buffer to avoid runtime allocation
 		sendBuf = (char*)malloc(SEND_BUFFER);
 		if (sendBuf == NULL) {
@@ -59,7 +59,7 @@ public:
 			throw;
 		}
 
-		WSASetIPUserMtu(s, 1476);
+		WSASetIPUserMtu(s, mtu);
 	}
 
 	[[noreturn]] void receiver(HMODULE wintun);

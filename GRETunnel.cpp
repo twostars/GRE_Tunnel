@@ -87,13 +87,12 @@ int main(int argc, char* argv[])
 {
 	SetUnhandledExceptionFilter(unhandled_handler);
 	std::cout << "GRE Tunnel for Windows" << std::endl << std::endl;
-	if (argc < 5 || argc > 8) {
+	if (argc < 5 || argc > 9) {
 		std::cerr << "At least 2 arguments must be given" << std::endl <<
-			"Arguments: gre_tunnel.exe GRE_BIND_IP GRE_SERVER INTERFACE_IP GATEWAY_IP [CIDR (30)] [ADAPTER_NAME] [ADDITIONAL PUBLIC IP]" << std::endl;
+			"Arguments: gre_tunnel.exe GRE_BIND_IP GRE_SERVER INTERFACE_IP GATEWAY_IP [CIDR (30)] [ADAPTER_NAME] [ADDITIONAL PUBLIC IP] [MTU]" << std::endl;
 		return 0;
 	}
 	configure_logging();
-
 
 	LOG(DEBUG) << "Starting GRE Application";
 
@@ -102,41 +101,37 @@ int main(int argc, char* argv[])
 
 	const char* bind_ip = argv[3];
 	const char* gateway_ip = argv[4];
-	const wchar_t* adapter_name;
-	const char* _adapter_name;
-	int cidr;
-	const char* additional_ip;
+	const wchar_t* adapter_name = L"GRE_Tunnel";
+	const char* _adapter_name = "GRE_Tunnel";
+	int cidr = 30;
+	const char* additional_ip = "";
+	uint32_t mtu = 1476;
 
 	// Default CIDR is 30
 	if (argc >= 6) {
 		cidr = atoi(argv[5]);
 		if (cidr == 0) LOG(FATAL) << "CIDR " << cidr << " is invalid.";
 	}
-	else
-		cidr = 30;
 
 	if (argc >= 7)
 	{
 		adapter_name = GetWC(argv[6]);
 		_adapter_name = argv[6];
 	}
-	else
-	{
-		adapter_name = L"GRE_Tunnel";
-		_adapter_name = "GRE_Tunnel";
-	}
 
 	if (argc >= 8)
-	{
 		additional_ip = argv[7];
-	}
-	else
-		additional_ip = "";
 
-	std::cout << "My IP on the GRE network: " << bind_ip << "/" << cidr << std::endl <<
-		"GRE server IP           : " << server_ip << std::endl <<
-		"GRE server IP (Gateway) : " << gateway_ip << std::endl <<
-		"GRE binding IP          : " << gre_bind_ip << std::endl;
+	if (argc >= 9)
+		mtu = (uint32_t) atoi(argv[8]);
+
+	std::cout
+		<< "My IP on the GRE network: " << bind_ip << "/" << cidr << std::endl
+		<< "GRE server IP           : " << server_ip << std::endl
+		<< "GRE server IP (Gateway) : " << gateway_ip << std::endl
+		<< "GRE binding IP          : " << gre_bind_ip << std::endl
+		<< "Additional IP: " << additional_ip << std::endl
+		<< "MTU: " << mtu << std::endl;
 	std::wcout << L"Adapter name            : " << adapter_name << std::endl << std::endl;
 
 	if (!validateIpAddress(bind_ip) || !validateIpAddress(gre_bind_ip) || !validateIpAddress(server_ip)
@@ -151,7 +146,8 @@ int main(int argc, char* argv[])
 	}
 
 	Adapter = WintunCreateAdapter(adapter_name, L"GRE_Tunnel", NULL);
-	if (!Adapter) {
+	if (Adapter == nullptr)
+	{
 		LOG(FATAL) << "Failed to create Wintun adapter: " << GetLastError();
 		return 0;
 	}
@@ -176,7 +172,7 @@ int main(int argc, char* argv[])
 	}
 
 	Session = WintunStartSession(Adapter, WINTUN_MAX_RING_CAPACITY);
-	if (!Session)
+	if (Session == nullptr)
 	{
 		LOG(FATAL) << "Failed to create adapter";
 		WintunCloseAdapter(Adapter);
@@ -187,22 +183,20 @@ int main(int argc, char* argv[])
 	sprintf_s(comm, 256, "netsh interface ip set address name=\"%s\" static %s 255.255.255.252 %s 300", _adapter_name, bind_ip, gateway_ip);
 	LOG(INFO) << comm;
 	system(comm);
-	memset(comm, '0', 256);
-	sprintf_s(comm, 256, "netsh interface ip set subinterface \"%s\" mtu=1476 store=persistent", _adapter_name);
+	memset(comm, 0, 256);
+	sprintf_s(comm, 256, "netsh interface ip set subinterface \"%s\" mtu=%u store=persistent", _adapter_name, mtu);
 	LOG(INFO) << comm;
 	system(comm);
 
 	if (argc >= 8)
 	{
-		memset(comm, '0', 256);
+		memset(comm, 0, 256);
 		sprintf_s(comm, 256, "netsh interface ipv4 add address \"%s\" %s 255.255.255.255", _adapter_name, additional_ip);
 		LOG(INFO) << comm;
 		system(comm);
 	}
 
-
-
-	gre = new GRE(server_ip, gre_bind_ip);
+	gre = new GRE(server_ip, gre_bind_ip, mtu);
 
 	std::thread t1(wintun_receive_loop);
 
